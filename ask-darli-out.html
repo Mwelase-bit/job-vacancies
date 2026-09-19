@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Will You Go Out With Me?</title>
+<!-- Browser tab icon: a heart emoji, inlined as an SVG data URI so the file stays self-contained -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%97%3C/text%3E%3C/svg%3E">
+<style>
+  /* ---------- Base / reset ---------- */
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #fff0f5, #ffe4ec, #fff8e7, #fdf3d9);
+    background-size: 300% 300%;
+    animation: gradientShift 12s ease infinite;
+    font-family: 'Segoe UI', 'Trebuchet MS', Tahoma, sans-serif;
+    overflow: hidden;
+    position: relative;
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* ---------- Floating background hearts ---------- */
+  .hearts-bg {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .floating-heart {
+    position: absolute;
+    bottom: -10%;
+    color: #ff6f91;
+    opacity: 0.75;
+    will-change: transform, opacity;
+    animation-name: floatUp;
+    animation-timing-function: ease-in;
+    animation-iteration-count: infinite;
+  }
+
+  @keyframes floatUp {
+    0% {
+      transform: translateY(0) translateX(0) rotate(0deg);
+      opacity: 0.85;
+    }
+    50% {
+      transform: translateY(-55vh) translateX(15px) rotate(180deg);
+      opacity: 0.9;
+    }
+    100% {
+      transform: translateY(-115vh) translateX(-15px) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  /* ---------- Intro: a rising rose ---------- */
+  .intro-screen {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: opacity 0.5s ease;
+  }
+
+  .intro-screen.fade-out {
+    opacity: 0;
+  }
+
+  .rose-wrap {
+    display: flex;
+    justify-content: center;
+    transform: translateY(130px);
+    opacity: 0;
+    animation: riseUp 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes riseUp {
+    0% { transform: translateY(130px); opacity: 0; }
+    55% { opacity: 1; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  .rose-svg {
+    width: 140px;
+    height: 220px;
+  }
+
+  /* The bloom pops open shortly after the stem has risen into place */
+  .rose-bloom {
+    transform-box: fill-box;
+    transform-origin: center;
+    opacity: 0;
+    transform: scale(0.3);
+    animation: bloomPop 0.7s ease-out forwards;
+    animation-delay: 0.75s;
+  }
+
+  @keyframes bloomPop {
+    0% { opacity: 0; transform: scale(0.3); }
+    70% { transform: scale(1.08); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* ---------- Card ---------- */
+  .card {
+    position: relative;
+    z-index: 1;
+    background: #fffafc;
+    border-radius: 28px;
+    padding: 40px 32px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(255, 111, 145, 0.28);
+    border: 2px solid #ffd6e0;
+    animation: pop 0.7s ease-out;
+    display: none;
+  }
+
+  @keyframes pop {
+    0% {
+      transform: scale(0.7);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* ---------- Photo of us ---------- */
+  .photo-frame {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid #ff6f91;
+    box-shadow: 0 8px 20px rgba(255, 111, 145, 0.4);
+    margin: 0 auto 18px;
+    animation: photoPop 0.9s ease-out;
+  }
+
+  .couple-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Hide gracefully if the image fails to load, no broken icon */
+  .photo-frame.img-error {
+    display: none;
+  }
+
+  /* Smaller reveal-screen photo, same circular treatment */
+  .photo-frame.reveal-photo {
+    width: 100px;
+    height: 100px;
+    margin: 14px auto 6px;
+  }
+
+  @keyframes photoPop {
+    0% {
+      transform: scale(0.5);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* ---------- Text ---------- */
+  h1 {
+    color: #d6336c;
+    font-size: 1.9rem;
+    margin: 0 0 6px;
+  }
+
+  .subheading {
+    color: #b3607e;
+    font-size: 0.95rem;
+    margin: 0 0 14px;
+  }
+
+  .question {
+    color: #8a5a6b;
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 28px;
+  }
+
+  /* ---------- Buttons ---------- */
+  .buttons {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    min-height: 110px;
+  }
+
+  button {
+    padding: 12px 28px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.25s ease, font-size 0.25s ease;
+  }
+
+  #yesBtn {
+    background: linear-gradient(135deg, #ff6f91, #ff9a8b);
+    color: white;
+    box-shadow: 0 6px 16px rgba(255, 111, 145, 0.4);
+    transform: scale(1);
+  }
+
+  #noBtn {
+    background: #ffe4ec;
+    color: #d6336c;
+    /* Starts in normal flex flow next to "Yes"; JS switches it to
+       position: absolute the first time it needs to dodge. */
+    position: relative;
+  }
+
+  /* ---------- Reveal screen ---------- */
+  #reveal {
+    display: none;
+  }
+
+  .big-heart {
+    font-size: 4rem;
+    display: inline-block;
+    animation: beat 1s ease-in-out infinite;
+  }
+
+  @keyframes beat {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.15); }
+    40% { transform: scale(0.95); }
+    60% { transform: scale(1.1); }
+  }
+
+  #reveal h2 {
+    color: #d6336c;
+    margin: 12px 0 4px;
+    font-size: 1.7rem;
+  }
+
+  #reveal .outfit-line {
+    color: #8a5a6b;
+    margin: 14px 0 10px;
+    font-size: 1rem;
+  }
+
+  .time-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #ffd76e, #ffb86e);
+    color: #7a4a00;
+    font-weight: bold;
+    font-size: 1.15rem;
+    padding: 10px 22px;
+    border-radius: 50px;
+    box-shadow: 0 6px 16px rgba(255, 184, 110, 0.5);
+    margin-bottom: 16px;
+    animation: badgePop 0.6s ease-out;
+  }
+
+  @keyframes badgePop {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .closing-line {
+    color: #b3607e;
+    font-size: 0.98rem;
+    margin-top: 6px;
+  }
+
+  /* ---------- Mobile responsiveness ---------- */
+  @media (max-width: 480px) {
+    .rose-svg {
+      width: 112px;
+      height: 176px;
+    }
+
+    .card {
+      padding: 30px 20px;
+      border-radius: 22px;
+    }
+
+    .photo-frame {
+      width: 105px;
+      height: 105px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+    }
+
+    .question {
+      font-size: 0.98rem;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 0.92rem;
+    }
+
+    .big-heart {
+      font-size: 3.2rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background layer of floating hearts, generated by JS below -->
+<div class="hearts-bg" id="heartsBg"></div>
+
+<!-- ===== Intro: a rose rises up before the ask card appears ===== -->
+<div class="intro-screen" id="introScreen">
+  <div class="rose-wrap">
+    <svg class="rose-svg" viewBox="0 0 140 220" aria-hidden="true">
+      <defs>
+        <linearGradient id="stemGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#6fbf73"/>
+          <stop offset="100%" stop-color="#2e7d32"/>
+        </linearGradient>
+        <linearGradient id="leafGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#7fce7f"/>
+          <stop offset="100%" stop-color="#3f9142"/>
+        </linearGradient>
+        <linearGradient id="petalOuter" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#ff9ab8"/>
+          <stop offset="100%" stop-color="#e63950"/>
+        </linearGradient>
+        <linearGradient id="petalInner" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#f4436c"/>
+          <stop offset="100%" stop-color="#c9184a"/>
+        </linearGradient>
+        <linearGradient id="petalCenter" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#c9184a"/>
+          <stop offset="100%" stop-color="#800f2f"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Stem -->
+      <path d="M70,214 C58,180 84,150 70,112" fill="none" stroke="url(#stemGrad)" stroke-width="7" stroke-linecap="round"/>
+
+      <!-- Leaves -->
+      <path d="M70,178 C50,168 34,174 26,190 C46,196 62,192 70,178 Z" fill="url(#leafGrad)"/>
+      <path d="M70,158 C90,148 106,154 114,170 C94,176 78,172 70,158 Z" fill="url(#leafGrad)"/>
+
+      <!-- Bloom (pops open after the stem rises into place) -->
+      <g transform="translate(70,78)">
+        <g class="rose-bloom">
+          <!-- outer petals -->
+          <g fill="url(#petalOuter)">
+            <path transform="rotate(-55)" d="M0,0 C-16,-14 -16,-40 0,-46 C16,-40 16,-14 0,0 Z"/>
+            <path transform="rotate(-20)" d="M0,0 C-16,-14 -16,-40 0,-46 C16,-40 16,-14 0,0 Z"/>
+            <path transform="rotate(15)" d="M0,0 C-16,-14 -16,-40 0,-46 C16,-40 16,-14 0,0 Z"/>
+            <path transform="rotate(50)" d="M0,0 C-16,-14 -16,-40 0,-46 C16,-40 16,-14 0,0 Z"/>
+          </g>
+          <!-- inner petals -->
+          <g fill="url(#petalInner)">
+            <path transform="rotate(-35)" d="M0,0 C-11,-10 -11,-30 0,-34 C11,-30 11,-10 0,0 Z"/>
+            <path transform="rotate(0)" d="M0,0 C-11,-10 -11,-30 0,-34 C11,-30 11,-10 0,0 Z"/>
+            <path transform="rotate(35)" d="M0,0 C-11,-10 -11,-30 0,-34 C11,-30 11,-10 0,0 Z"/>
+          </g>
+          <!-- center swirl -->
+          <g fill="url(#petalCenter)">
+            <path transform="rotate(-15)" d="M0,0 C-7,-6 -7,-18 0,-20 C7,-18 7,-6 0,0 Z"/>
+            <path transform="rotate(20)" d="M0,0 C-7,-6 -7,-18 0,-20 C7,-18 7,-6 0,0 Z"/>
+          </g>
+        </g>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<div class="card" id="card">
+
+  <!-- Photo of us together. Fails gracefully via onerror if us.jpg is missing -->
+  <div class="photo-frame" id="photoFrame">
+    <img
+      src="us.jpg"
+      alt="A photo of us together"
+      class="couple-photo"
+      id="couplePhoto"
+    >
+  </div>
+
+  <!-- ===== Ask screen ===== -->
+  <div id="askScreen">
+    <h1>Hey Darli...</h1>
+    <p class="subheading">I have a very important question for you 👀</p>
+    <p class="question">Would you go out on a date with me?</p>
+
+    <div class="buttons">
+      <button id="yesBtn" onclick="sayYes()">Yes 💕</button>
+      <button id="noBtn">No</button>
+    </div>
+  </div>
+
+  <!-- ===== Reveal screen (hidden until Yes is clicked) ===== -->
+  <div id="reveal">
+    <span class="big-heart">💗</span>
+    <h2>Yay! She said yes!</h2>
+
+    <!-- The first photo of us, shown again here to celebrate -->
+    <div class="photo-frame reveal-photo" id="revealPhotoFrame">
+      <img
+        src="us.jpeg"
+        alt="Another photo of us together"
+        class="couple-photo"
+        id="revealPhoto"
+      >
+    </div>
+
+    <p class="outfit-line">Be ready in a nice outfit,</p>
+    <div class="time-badge">7:00 PM 🌙</div>
+    <p class="closing-line">Can't wait to see you, Darli 🥹✨</p>
+  </div>
+
+</div>
+
+<script>
+  // ---------- Handle missing photos gracefully ----------
+  const couplePhoto = document.getElementById('couplePhoto');
+  const photoFrame = document.getElementById('photoFrame');
+  couplePhoto.addEventListener('error', function () {
+    // No broken image icon: just remove the whole frame from view
+    photoFrame.classList.add('img-error');
+  });
+
+  const revealPhoto = document.getElementById('revealPhoto');
+  const revealPhotoFrame = document.getElementById('revealPhotoFrame');
+  revealPhoto.addEventListener('error', function () {
+    revealPhotoFrame.classList.add('img-error');
+  });
+
+  // ---------- Intro: fade out the rising LEGO flower, then show the card ----------
+  const introScreen = document.getElementById('introScreen');
+  const card = document.getElementById('card');
+
+  setTimeout(function () {
+    introScreen.classList.add('fade-out');
+    setTimeout(function () {
+      introScreen.style.display = 'none';
+      card.style.display = 'block';
+    }, 500);
+  }, 2300);
+
+  // ---------- Ask / reveal screen logic ----------
+  const askScreen = document.getElementById('askScreen');
+  const reveal = document.getElementById('reveal');
+  const yesBtn = document.getElementById('yesBtn');
+  const noBtn = document.getElementById('noBtn');
+  const buttonsBox = document.querySelector('.buttons');
+
+  // Tracks how much the Yes button has grown so far (in scale units)
+  let yesScale = 1;
+
+  function sayYes() {
+    askScreen.style.display = 'none';
+    reveal.style.display = 'block';
+  }
+
+  // Moves the "No" button to a random spot within the card,
+  // and grows the "Yes" button a little each time.
+  function dodgeNoButton() {
+    const boxRect = buttonsBox.getBoundingClientRect();
+    const btnRect = noBtn.getBoundingClientRect();
+
+    // Padding so the button doesn't escape the buttons area
+    const padding = 8;
+    const maxX = boxRect.width - btnRect.width - padding;
+    const maxY = boxRect.height - btnRect.height - padding;
+
+    const randX = Math.max(padding, Math.random() * maxX);
+    const randY = Math.max(padding, Math.random() * maxY);
+
+    // Switch to absolute positioning (relative to the card) on first dodge
+    noBtn.style.position = 'absolute';
+    noBtn.style.left = randX + 'px';
+    noBtn.style.top = randY + 'px';
+
+    // Nudge the user toward "Yes" by growing it slightly, capped so it stays tasteful
+    if (yesScale < 1.6) {
+      yesScale += 0.06;
+      yesBtn.style.transform = 'scale(' + yesScale.toFixed(2) + ')';
+      yesBtn.style.fontSize = (1 + (yesScale - 1) * 0.4) + 'rem';
+    }
+  }
+
+  noBtn.addEventListener('mouseover', dodgeNoButton);
+  noBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    dodgeNoButton();
+  });
+  noBtn.addEventListener('touchstart', function (e) {
+    e.preventDefault();
+    dodgeNoButton();
+  });
+
+  // ---------- Generate floating background hearts ----------
+  const heartsBg = document.getElementById('heartsBg');
+  const heartEmojis = ['💗', '💕', '💖', '❤️', '💓'];
+  const HEART_COUNT = 20;
+
+  for (let i = 0; i < HEART_COUNT; i++) {
+    const heart = document.createElement('div');
+    heart.className = 'floating-heart';
+    heart.textContent = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+
+    // Random horizontal position across the viewport
+    heart.style.left = Math.random() * 100 + 'vw';
+
+    // Random size for variety
+    const size = 14 + Math.random() * 22;
+    heart.style.fontSize = size + 'px';
+
+    // Random duration/delay so hearts don't move in sync
+    const duration = 8 + Math.random() * 10;
+    const delay = Math.random() * 10;
+    heart.style.animationDuration = duration + 's';
+    heart.style.animationDelay = '-' + delay + 's';
+
+    heartsBg.appendChild(heart);
+  }
+</script>
+
+</body>
+</html>
